@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Firebase IBS</title>
+<style>
+body{font-family:sans-serif;max-width:500px;margin:20px auto;padding:16px}
+.ok{color:green;font-weight:bold}
+.err{color:red;font-weight:bold}
+.warn{color:orange;font-weight:bold}
+#log{background:#f5f5f5;padding:12px;border-radius:6px;margin-top:16px;font-size:13px;font-family:monospace;white-space:pre-wrap;min-height:200px;border:1px solid #ddd}
+button{padding:12px 20px;background:#1B3A6B;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;margin:4px;width:100%}
+</style>
+</head>
+<body>
+<h2>🔥 Test Firebase Mobile</h2>
+<div id="status"><b>Caricamento...</b></div>
+<button onclick="testRead()">📖 Leggi offers da Firebase</button>
+<button onclick="testWrite()">✏️ Scrivi dato test</button>
+<button onclick="testDelete()">🗑️ Elimina dato test</button>
+<div id="log">In attesa...\n</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+const log = (msg, type) => {
+  const el = document.getElementById('log');
+  const t = new Date().toLocaleTimeString();
+  const icon = type==='ok'?'✅':type==='err'?'❌':type==='warn'?'⚠️':'ℹ️';
+  el.textContent += `[${t}] ${icon} ${msg}\n`;
+  console.log(msg);
+};
+
+log('Script avviato');
+log('User Agent: ' + navigator.userAgent.substring(0,80));
+
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyDNmnwTxKSjhaj5oyK7TKRloOONd4ExeDk",
+    authDomain: "revomotive-86242.firebaseapp.com",
+    databaseURL: "https://revomotive-86242-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "revomotive-86242",
+    storageBucket: "revomotive-86242.firebasestorage.app",
+    messagingSenderId: "671550701303",
+    appId: "1:671550701303:web:a34632e39c78548c55ddf2"
+  });
+  const db = firebase.database();
+  log('Firebase inizializzato', 'ok');
+  document.getElementById('status').innerHTML = '<span class="ok">✅ Firebase pronto</span>';
+
+  // Connessione
+  db.ref('.info/connected').on('value', snap => {
+    if(snap.val()){
+      log('Connesso a Firebase!', 'ok');
+      document.getElementById('status').innerHTML = '<span class="ok">✅ Connesso a Firebase</span>';
+    } else {
+      log('Non connesso a Firebase', 'warn');
+      document.getElementById('status').innerHTML = '<span class="warn">⚠️ Connessione in corso...</span>';
+    }
+  });
+
+  window.testRead = function(){
+    log('Lettura offers...');
+    db.ref('offers').once('value')
+      .then(snap => {
+        const data = snap.val();
+        if(data){
+          const n = Object.keys(data).length;
+          log(`Trovate ${n} offerte in Firebase!`, 'ok');
+        } else {
+          log('Nessuna offerta trovata (database vuoto)', 'warn');
+        }
+      })
+      .catch(e => log('ERRORE lettura: ' + e.code + ' - ' + e.message, 'err'));
+  };
+
+  window.testWrite = function(){
+    log('Scrittura test...');
+    db.ref('_test/mobile').set({ts: Date.now(), ua: navigator.userAgent.substring(0,50)})
+      .then(() => log('Scrittura OK!', 'ok'))
+      .catch(e => log('ERRORE scrittura: ' + e.code + ' - ' + e.message, 'err'));
+  };
+
+  window.testDelete = function(){
+    db.ref('_test').remove()
+      .then(() => log('Eliminazione OK', 'ok'))
+      .catch(e => log('ERRORE: ' + e.message, 'err'));
+  };
+
+} catch(e) {
+  log('ERRORE CRITICO: ' + e.message, 'err');
+  document.getElementById('status').innerHTML = '<span class="err">❌ ' + e.message + '</span>';
+}
+</script>
+</body>
+</html>
